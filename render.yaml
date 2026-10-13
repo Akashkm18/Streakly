@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     rootDir: server
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: node scripts/prepare-prisma.js && npm install --include=dev && npx prisma db push --accept-data-loss && npx prisma generate && npx tsx prisma/seed.ts && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:

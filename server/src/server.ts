@@ -13,6 +13,6 @@ initializeSockets(server);
 initializeScheduledJobs();
 
 server.listen(env.PORT, () => {
-  console.log(`🌿 Bloom API Server flourishing on http://localhost:${env.PORT}`);
+  console.log(`⚡ Streakly API Server online on port ${env.PORT}`);
   console.log(`📖 Swagger API Documentation available at http://localhost:${env.PORT}/api/docs`);
 });
