@@ -15,7 +15,9 @@ export class ApiError extends Error {
 const rawBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
 export const API_BASE = rawBaseUrl
   ? (rawBaseUrl.startsWith('http') ? rawBaseUrl.replace(/\/$/, '') : `https://${rawBaseUrl.replace(/\/$/, '')}`)
-  : '';
+  : (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')
+      ? 'https://streakly-api-9cjr.onrender.com'
+      : '');
 
 export async function apiClient<T = any>(
   endpoint: string,

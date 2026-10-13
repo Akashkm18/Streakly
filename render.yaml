@@ -47,10 +47,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: streakly-api
-          property: host
+        value: https://streakly-api-9cjr.onrender.com
 
 databases:
   # Managed PostgreSQL Database
