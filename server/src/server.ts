@@ -12,7 +12,7 @@ initializeSockets(server);
 // Initialize scheduled background jobs
 initializeScheduledJobs();
 
-server.listen(env.PORT, () => {
+server.listen(env.PORT, '0.0.0.0', () => {
   console.log(`⚡ Streakly API Server online on port ${env.PORT}`);
   console.log(`📖 Swagger API Documentation available at http://localhost:${env.PORT}/api/docs`);
 });
