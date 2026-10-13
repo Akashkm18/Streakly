@@ -1,0 +1,117 @@
+# ⚡ Streakly — Clean, Professional Habit & Hobby Streak Tracker
+
+> A modern full-stack habit and hobby momentum tracker built with React 18, TypeScript, Tailwind CSS, TanStack Query, Node.js + Express, Prisma ORM, and PostgreSQL / SQLite.
+
+---
+
+## 🚀 Key Features
+
+1. **Dashboard & Habit Tracking**: Schedule-aware streak calculation (Every Day, Specific Days, X Times/Week), freeze protection, advance rest days, and accurate progress indicators.
+2. **Hobby Library**: 40+ curated hobby templates across 8 categories with search, category filtering, one-click adoption, and custom hobby creation.
+3. **Password Recovery via Email OTP**: 3-step wizard with cryptographic 6-digit OTP, SHA-256 hashing, 10-minute expiry, 5-attempt limit, 60s resend cooldown, and Mailpit email capture.
+4. **Hardened Security Architecture**:
+   - **Password Security**: Bcrypt cost factor 12 with strict complexity policy (min 8 chars, uppercase, lowercase, number, special character) and client strength meter.
+   - **Session Security**: 15-minute access token + 7-day rotating refresh tokens stored in `httpOnly`, `Secure`, `SameSite=Strict` cookies.
+   - **Token Family Rotation**: Refresh tokens tracked in database by family UUID with automatic reuse detection and full family revocation.
+   - **Anti-Enumeration & Lockout**: 5 failed login attempts lock account for 15 minutes; constant-time comparison and identical error responses for wrong email/password.
+   - **Defense-in-Depth**: Strict Content Security Policy (CSP) via Helmet, Origin CSRF verification for mutating requests, rate limiting on auth and API endpoints, and HTML sanitization preventing stored XSS.
+   - **IDOR Protection**: Strict user ownership verification returning 404 on unowned resources.
+   - **Audit Logging**: Structured auth event logging (`LOGIN_SUCCESS`, `LOGIN_FAILED`, `ACCOUNT_LOCKED`, `TOKEN_REUSE_DETECTED`, `PASSWORD_RESET_SUCCESS`, `ACCOUNT_DELETED`).
+5. **Data Portability & Account Deletion**:
+   - One-click full JSON and CSV data exports (`GET /api/v1/export/json`, `GET /api/v1/export/csv`).
+   - Self-service account deletion with password verification and cascade purging (`DELETE /api/v1/auth/account`).
+6. **Permanent Database Storage & Disaster Recovery**:
+   - Named Docker volume `streakly_pgdata` ensuring data persistence across rebuilds.
+   - Automated PostgreSQL backup (`pg_dump`) and restore scripts for Linux/macOS and Windows PowerShell.
+
+---
+
+## 📦 Quick Start (Local Development)
+
+### 1. Prerequisites
+- Node.js (v18+)
+- npm
+
+### 2. Backend Setup
+```bash
+cd server
+npm install
+npx prisma db push
+npx prisma generate
+npm run prisma:seed    # Seeds 8 categories, 40 templates, and demo account alex@streakly.dev
+npm run dev            # API runs on http://localhost:5000
+```
+
+### 3. Frontend Setup (in a separate terminal)
+```bash
+cd client
+npm install
+npm run dev            # Web App runs on http://localhost:5173
+```
+
+### 4. Demo Login Credentials
+- **Email**: `alex@streakly.dev`
+- **Password**: `Password123!`
+- *(Or click the **1-Click Demo Login** button on the sign-in page).*
+
+---
+
+## 🐳 Docker Compose Deployment
+
+Run the complete production-grade stack including PostgreSQL, Mailpit email server, Express API, and React frontend:
+
+```bash
+docker compose up --build -d
+```
+
+Services exposed:
+- **Web App**: [http://localhost:5173](http://localhost:5173)
+- **API Server**: [http://localhost:5000](http://localhost:5000)
+- **API Swagger Docs**: [http://localhost:5000/api/docs](http://localhost:5000/api/docs)
+- **Mailpit Web UI (Email OTP Viewer)**: [http://localhost:8025](http://localhost:8025)
+
+---
+
+## ✉️ Email & OTP Setup (Mailpit)
+
+In local development or Docker, Streakly connects to **Mailpit** (an ultra-fast zero-dependency local SMTP server):
+- **SMTP Port**: `1025`
+- **Web UI**: [http://localhost:8025](http://localhost:8025)
+
+When you trigger a password reset on `/forgot-password`, the verification email is delivered to Mailpit and viewable instantly in your browser at `http://localhost:8025`. If no SMTP server is running, Streakly safely logs the simulated email OTP directly to the server terminal.
+
+---
+
+## 💾 Database Backup & Restore
+
+### PostgreSQL Backup (`pg_dump`)
+```bash
+# Linux / macOS
+./scripts/backup.sh --docker
+
+# Windows PowerShell
+.\scripts\backup.ps1 -Docker
+```
+Backups are saved to `./backups/streakly_backup_YYYYMMDD_HHMMSS.sql`.
+
+### Database Restore
+```bash
+# Linux / macOS
+./scripts/restore.sh ./backups/streakly_backup_YYYYMMDD_HHMMSS.sql --docker
+
+# Windows PowerShell
+.\scripts\restore.ps1 -BackupFile .\backups\streakly_backup_YYYYMMDD_HHMMSS.sql -Docker
+```
+
+---
+
+## 🧪 Testing Suites
+
+Run unit and integration test suites:
+
+```bash
+cd server
+
+# Run Vitest test suites (Password policy, OTP generation, Token rotation, IDOR)
+npm test
+```
