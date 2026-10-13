@@ -1,6 +1,6 @@
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -34,8 +34,8 @@ model User {
 model Category {
   id        String          @id @default(uuid())
   name      String          @unique
-  icon      String          // Lucide icon key
-  color     String          // Category hex color
+  icon      String
+  color     String
   order     Int             @default(0)
   templates HobbyTemplate[]
   habits    Habit[]
@@ -49,11 +49,11 @@ model HobbyTemplate {
   description         String
   icon                String
   color               String
-  defaultUnit         String    // "mins", "pages", "km", "reps", "glasses", "sessions", "rupees"
-  suggestedGoal       Float     // e.g. 30, 10, 5
-  scheduleType        String    @default("EVERY_DAY") // EVERY_DAY, SPECIFIC_DAYS, TIMES_PER_WEEK
-  defaultDays         String?   // JSON string e.g. '["MON","WED","FRI"]'
-  defaultTimesPerWeek Int?      // e.g. 3
+  defaultUnit         String
+  suggestedGoal       Float
+  scheduleType        String    @default("EVERY_DAY")
+  defaultDays         String?
+  defaultTimesPerWeek Int?
 }
 
 model Habit {
@@ -68,8 +68,8 @@ model Habit {
   color              String      @default("#4F46E5")
   unit               String      @default("times")
   targetAmount       Float       @default(1)
-  scheduleType       String      @default("EVERY_DAY") // EVERY_DAY, SPECIFIC_DAYS, TIMES_PER_WEEK
-  scheduleDays       String?     // JSON array e.g. '["MON","WED","FRI"]'
+  scheduleType       String      @default("EVERY_DAY")
+  scheduleDays       String?
   timesPerWeek       Int?        @default(7)
   currentStreak      Int         @default(0)
   longestStreak      Int         @default(0)
@@ -92,11 +92,11 @@ model CheckIn {
   id        String   @id @default(uuid())
   userId    String
   habitId   String
-  date      String   // YYYY-MM-DD
+  date      String
   timestamp DateTime @default(now())
   amount    Float    @default(1)
   note      String?
-  effort    Int?     // 1-5 rating
+  effort    Int?
   isFrozen  Boolean  @default(false)
   isRestDay Boolean  @default(false)
 
@@ -111,8 +111,8 @@ model Freeze {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      String   // YYYY-MM-DD
-  monthKey  String   // YYYY-MM
+  date      String
+  monthKey  String
   reason    String?
   createdAt DateTime @default(now())
 
@@ -126,8 +126,8 @@ model RestDay {
   habitId   String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   habit     Habit?   @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  date      String   // YYYY-MM-DD
-  reason    String   // "Sick", "Travel", "Rest"
+  date      String
+  reason    String
   createdAt DateTime @default(now())
 
   @@index([userId, date])
@@ -139,10 +139,10 @@ model Goal {
   habitId       String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   habit         Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  title         String   // e.g. "Read 12 books by Dec 31"
+  title         String
   targetAmount  Float
   unit          String
-  deadline      String   // YYYY-MM-DD
+  deadline      String
   currentAmount Float    @default(0)
   isCompleted   Boolean  @default(false)
   createdAt     DateTime @default(now())
@@ -153,11 +153,11 @@ model Goal {
 
 model Badge {
   id          String      @id @default(uuid())
-  key         String      @unique // streak-7, streak-30, streak-100, streak-365, first-checkin, 10-hobbies, personal-record, perfect-week
+  key         String      @unique
   name        String
   description String
   icon        String
-  tier        String      @default("BRONZE") // BRONZE, SILVER, GOLD, PLATINUM
+  tier        String      @default("BRONZE")
   userBadges  UserBadge[]
 }
 
@@ -179,7 +179,7 @@ model Reminder {
   habitId      String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   habit        Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
-  reminderTime String   // "HH:MM" e.g. "08:30"
+  reminderTime String
   isEnabled    Boolean  @default(true)
   createdAt    DateTime @default(now())
 
@@ -191,7 +191,7 @@ model RefreshToken {
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tokenHash  String   @unique
-  familyId   String   // Grouping for token rotation family
+  familyId   String
   isRevoked  Boolean  @default(false)
   expiresAt  DateTime
   createdAt  DateTime @default(now())
@@ -205,11 +205,11 @@ model PasswordResetOtp {
   id                  String    @id @default(uuid())
   userId              String
   user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  otpHash             String    // SHA-256 hash of 6-digit OTP
+  otpHash             String
   attempts            Int       @default(0)
   maxAttempts         Int       @default(5)
-  expiresAt           DateTime  // 10 minutes from creation
-  resetTokenHash      String?   // Hash of 10-min single-use reset token
+  expiresAt           DateTime
+  resetTokenHash      String?
   resetTokenExpiresAt DateTime?
   isUsed              Boolean   @default(false)
   createdAt           DateTime  @default(now())
@@ -221,10 +221,10 @@ model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  event     String   // LOGIN_SUCCESS, LOGIN_FAILED, ACCOUNT_LOCKED, PASSWORD_CHANGED, PASSWORD_RESET_REQUESTED, PASSWORD_RESET_SUCCESS, LOGOUT
+  event     String
   ipAddress String?
   userAgent String?
-  metadata  String?  // JSON string
+  metadata  String?
   createdAt DateTime @default(now())
 
   @@index([userId])
