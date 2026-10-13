@@ -12,11 +12,18 @@ export class ApiError extends Error {
   }
 }
 
+const rawBaseUrl = import.meta.env.VITE_API_URL as string | undefined;
+export const API_BASE = rawBaseUrl
+  ? (rawBaseUrl.startsWith('http') ? rawBaseUrl.replace(/\/$/, '') : `https://${rawBaseUrl.replace(/\/$/, '')}`)
+  : '';
+
 export async function apiClient<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = endpoint.startsWith('http') ? endpoint : `/api/v1${endpoint}`;
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${API_BASE}/api/v1${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   const headers = new Headers(options.headers || {});
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
@@ -34,7 +41,7 @@ export async function apiClient<T = any>(
   if (!response.ok) {
     // If access token expired, try to refresh once
     if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
-      const refreshRes = await fetch('/api/v1/auth/refresh', {
+      const refreshRes = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, KeyRound, Lock, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { PasswordStrengthMeter, evaluatePasswordRules } from '@/shared/ui/PasswordStrengthMeter';
 import { useToast } from '@/shared/ui/Toast';
+import { apiClient } from '@/shared/api/client';
 
 export const ForgotPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -53,16 +54,10 @@ export const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/v1/auth/forgot-password', {
+      await apiClient('/auth/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error?.message || 'Failed to send verification code');
-      }
 
       addToast({
         type: 'success',
@@ -127,18 +122,12 @@ export const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/v1/auth/verify-otp', {
+      const data = await apiClient<{ resetToken: string }>('/auth/verify-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), otp }),
       });
-      const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error?.message || 'Invalid or expired verification code');
-      }
-
-      setResetToken(data.data.resetToken);
+      setResetToken(data.resetToken);
       addToast({
         type: 'success',
         title: 'Code Verified',
@@ -158,15 +147,10 @@ export const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/v1/auth/forgot-password', {
+      await apiClient('/auth/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error?.message || 'Failed to resend code');
-      }
 
       addToast({
         type: 'info',
@@ -203,16 +187,10 @@ export const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await fetch('/api/v1/auth/reset-password', {
+      await apiClient('/auth/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resetToken, newPassword }),
       });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error?.message || 'Failed to reset password');
-      }
 
       setIsSuccess(true);
       addToast({
