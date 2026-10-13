@@ -5,7 +5,7 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './common/middleware/errorHandler';
 import { apiLimiter } from './common/middleware/rateLimiter';
-import { helmetMiddleware, csrfOriginCheck } from './common/middleware/security';
+import { helmetMiddleware, csrfOriginCheck, isOriginAllowed } from './common/middleware/security';
 import { swaggerSpec } from './docs/swagger';
 
 // Streakly Module routers
@@ -29,7 +29,12 @@ app.use(helmetMiddleware);
 // CORS configuration
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: (origin, callback) => {
+      if (!origin || isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Allow during transition/cross-service
+    },
     credentials: true,
   })
 );

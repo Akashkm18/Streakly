@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import { env } from '../../config/env';
 import { ForbiddenError } from '../errors/AppError';
 
-const allowedOrigins = [
+export const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
@@ -12,6 +12,17 @@ const allowedOrigins = [
   'http://127.0.0.1:5000',
   env.CLIENT_URL,
 ].filter(Boolean);
+
+export const isOriginAllowed = (origin: string): boolean => {
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    const url = new URL(origin);
+    if (url.hostname.endsWith('.onrender.com')) return true;
+  } catch {
+    // ignore
+  }
+  return false;
+};
 
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: {
@@ -50,7 +61,7 @@ export function csrfOriginCheck(req: Request, _res: Response, next: NextFunction
 
   // If origin is provided, verify it
   if (origin) {
-    if (!allowedOrigins.includes(origin)) {
+    if (!isOriginAllowed(origin)) {
       return next(new ForbiddenError('Cross-site request blocked: Origin not allowed'));
     }
     return next();
@@ -61,7 +72,7 @@ export function csrfOriginCheck(req: Request, _res: Response, next: NextFunction
     try {
       const refererUrl = new URL(referer);
       const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
-      if (!allowedOrigins.includes(refererOrigin)) {
+      if (!isOriginAllowed(refererOrigin)) {
         return next(new ForbiddenError('Cross-site request blocked: Referer not allowed'));
       }
       return next();
