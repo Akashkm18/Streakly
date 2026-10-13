@@ -1,5 +1,7 @@
 # ⚡ Streakly — Clean, Professional Habit & Hobby Streak Tracker
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Akashkm18/Streakly)
+
 > A modern full-stack habit and hobby momentum tracker built with React 18, TypeScript, Tailwind CSS, TanStack Query, Node.js + Express, Prisma ORM, and PostgreSQL / SQLite.
 
 ---
