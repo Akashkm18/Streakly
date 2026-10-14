@@ -61,6 +61,11 @@ Streakly is architected for clean 1-click deployment on Render using a single un
    - Render automatically runs the migration (`npx prisma migrate deploy`), builds client + server, and boots the service in under 3 minutes.
    - Your web app is live at `https://streakly.onrender.com`!
 
+### Troubleshooting
+- **P3005 Migration Baseline**: If your PostgreSQL instance already has pre-existing tables from previous deploys, [`server/scripts/migrate.js`](./server/scripts/migrate.js) automatically resolves `20261014000000_init` as applied on startup.
+- **Client Routing on Reload (404)**: Streakly Express backend includes a built-in SPA catch-all fallback route (`*` -> `client/dist/index.html`) so navigating directly to `/dashboard` or `/library` works seamlessly.
+- **Email Delivery**: Set `SMTP_PASS` to your 16-character Google App Password (not your personal Google account password) and `SMTP_SECURE=false` for port 587.
+
 ---
 
 ## 📦 Quick Start (Local Development)
