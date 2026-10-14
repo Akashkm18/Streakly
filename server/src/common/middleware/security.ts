@@ -12,12 +12,19 @@ export const allowedOrigins = [
   'http://127.0.0.1:10000',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  process.env.RENDER_EXTERNAL_URL,
   env.CLIENT_URL,
 ].filter(Boolean);
 
 export const isOriginAllowed = (origin: string): boolean => {
   if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
+  try {
+    const url = new URL(origin);
+    if (url.hostname.endsWith('.onrender.com')) return true;
+  } catch {
+    // ignore
+  }
   return false;
 };
 
@@ -31,6 +38,9 @@ export const helmetMiddleware = helmet({
       imgSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: [
         "'self'",
+        'wss:',
+        'ws:',
+        'https:',
         'http://localhost:5000',
         'http://127.0.0.1:5000',
         'http://localhost:5173',

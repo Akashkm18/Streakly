@@ -11,7 +11,7 @@ export function initializeSockets(server: HttpServer): SocketServer {
         if (!origin || isOriginAllowed(origin)) {
           return callback(null, true);
         }
-        return callback(new Error(`WebSocket CORS blocked for origin: ${origin}`));
+        return callback(null, false);
       },
       credentials: true,
     },
