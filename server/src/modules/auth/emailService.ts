@@ -62,6 +62,45 @@ async function trySendViaResend(
   }
 }
 
+async function trySendViaBrevo(
+  to: string,
+  subject: string,
+  text: string,
+  html: string
+): Promise<boolean> {
+  if (!env.BREVO_API_KEY) return false;
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: {
+          name: 'Streakly',
+          email: env.SMTP_USER && env.SMTP_USER.includes('@') ? env.SMTP_USER : 'akashguddekowthi@gmail.com',
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
+    });
+    if (res.ok) {
+      console.log(`[EmailService] Email sent to ${to} via Brevo HTTP API (Port 443)`);
+      return true;
+    }
+    const errText = await res.text();
+    console.warn(`[EmailService] Brevo API returned ${res.status}: ${errText}`);
+    return false;
+  } catch (err) {
+    console.warn(`[EmailService] Brevo API fetch failed: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 export async function sendOtpEmail(email: string, otp: string): Promise<boolean> {
   const mailOptions = {
     from: env.SMTP_FROM,
@@ -102,13 +141,19 @@ export async function sendOtpEmail(email: string, otp: string): Promise<boolean>
     `,
   };
 
-  // 1. Try Resend HTTP API over port 443 first (cloud friendly, never blocked by firewalls)
+  // 1. Try Brevo HTTP API over port 443 (free, sends to any email, unblocked on Render)
+  if (env.BREVO_API_KEY) {
+    const brevoSuccess = await trySendViaBrevo(email, mailOptions.subject, mailOptions.text, mailOptions.html);
+    if (brevoSuccess) return true;
+  }
+
+  // 2. Try Resend HTTP API over port 443
   if (env.RESEND_API_KEY) {
     const resendSuccess = await trySendViaResend(email, mailOptions.subject, mailOptions.text, mailOptions.html);
     if (resendSuccess) return true;
   }
 
-  // 2. Try SMTP via Nodemailer (with 4s connection timeout)
+  // 3. Try SMTP via Nodemailer (with 4s connection timeout)
   try {
     const t = getTransporter();
     await t.sendMail(mailOptions);
@@ -160,6 +205,11 @@ export async function sendPasswordResetSuccessEmail(email: string): Promise<bool
       </html>
     `,
   };
+
+  if (env.BREVO_API_KEY) {
+    const brevoSuccess = await trySendViaBrevo(email, mailOptions.subject, mailOptions.text, mailOptions.html);
+    if (brevoSuccess) return true;
+  }
 
   if (env.RESEND_API_KEY) {
     const resendSuccess = await trySendViaResend(email, mailOptions.subject, mailOptions.text, mailOptions.html);
