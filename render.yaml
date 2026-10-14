@@ -3,13 +3,15 @@ databases:
     databaseName: streakly
     user: streakly_user
     plan: free
+    region: oregon
 
 services:
   - type: web
     name: streakly
     env: node
     plan: free
-    buildCommand: npm install && npm run build
+    region: oregon
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
