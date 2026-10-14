@@ -35,6 +35,15 @@ async function trySendViaResend(
 ): Promise<boolean> {
   if (!env.RESEND_API_KEY) return false;
   try {
+    const fromAddress =
+      env.SMTP_FROM &&
+      !env.SMTP_FROM.includes('@gmail.com') &&
+      env.SMTP_FROM.includes('@') &&
+      !env.SMTP_FROM.includes('streakly.dev') &&
+      !env.SMTP_FROM.includes('localhost')
+        ? env.SMTP_FROM
+        : 'Streakly <onboarding@resend.dev>';
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -42,7 +51,7 @@ async function trySendViaResend(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.SMTP_FROM.includes('@') ? env.SMTP_FROM : 'Streakly <onboarding@resend.dev>',
+        from: fromAddress,
         to: [to],
         subject,
         text,
