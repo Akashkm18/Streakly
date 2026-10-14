@@ -31,9 +31,9 @@ const queryClient = new QueryClient({
 const AppContent: React.FC = () => {
   const { checkAuth } = useAuthStore();
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('streakly-theme') : null;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('streakly-theme-v2') : null;
     if (saved === 'light') return 'light';
-    return 'dark'; // Dark theme by default everywhere
+    return 'dark'; // Dark theme default everywhere
   });
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('streakly-theme', nextTheme);
+      localStorage.setItem('streakly-theme-v2', nextTheme);
     }
   };
 

@@ -23,6 +23,7 @@ const envSchema = z.object({
   SMTP_SECURE: z.coerce.boolean().default(false),
   MAIL_FROM: z.string().default('Streakly <support@streakly.dev>'),
   SMTP_FROM: z.string().default('Streakly <support@streakly.dev>'),
+  RESEND_API_KEY: z.string().optional().default(''),
 });
 
 const envDataToParse = {
@@ -67,4 +68,5 @@ export const env = parsedEnv.success
       SMTP_SECURE: false,
       MAIL_FROM: rawMailFrom,
       SMTP_FROM: rawMailFrom,
+      RESEND_API_KEY: process.env.RESEND_API_KEY || '',
     };

@@ -19,9 +19,47 @@ function getTransporter(): Transporter {
       tls: {
         rejectUnauthorized: false,
       },
+      connectionTimeout: 4000,
+      greetingTimeout: 4000,
+      socketTimeout: 5000,
     });
   }
   return transporter;
+}
+
+async function trySendViaResend(
+  to: string,
+  subject: string,
+  text: string,
+  html: string
+): Promise<boolean> {
+  if (!env.RESEND_API_KEY) return false;
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: env.SMTP_FROM.includes('@') ? env.SMTP_FROM : 'Streakly <onboarding@resend.dev>',
+        to: [to],
+        subject,
+        text,
+        html,
+      }),
+    });
+    if (res.ok) {
+      console.log(`[EmailService] Email sent to ${to} via Resend HTTP API`);
+      return true;
+    }
+    const errText = await res.text();
+    console.warn(`[EmailService] Resend API returned ${res.status}: ${errText}`);
+    return false;
+  } catch (err) {
+    console.warn(`[EmailService] Resend API fetch failed: ${(err as Error).message}`);
+    return false;
+  }
 }
 
 export async function sendOtpEmail(email: string, otp: string): Promise<boolean> {
@@ -64,6 +102,13 @@ export async function sendOtpEmail(email: string, otp: string): Promise<boolean>
     `,
   };
 
+  // 1. Try Resend HTTP API over port 443 first (cloud friendly, never blocked by firewalls)
+  if (env.RESEND_API_KEY) {
+    const resendSuccess = await trySendViaResend(email, mailOptions.subject, mailOptions.text, mailOptions.html);
+    if (resendSuccess) return true;
+  }
+
+  // 2. Try SMTP via Nodemailer (with 4s connection timeout)
   try {
     const t = getTransporter();
     await t.sendMail(mailOptions);
@@ -115,6 +160,11 @@ export async function sendPasswordResetSuccessEmail(email: string): Promise<bool
       </html>
     `,
   };
+
+  if (env.RESEND_API_KEY) {
+    const resendSuccess = await trySendViaResend(email, mailOptions.subject, mailOptions.text, mailOptions.html);
+    if (resendSuccess) return true;
+  }
 
   try {
     const t = getTransporter();

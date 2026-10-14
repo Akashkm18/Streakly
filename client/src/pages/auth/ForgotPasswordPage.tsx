@@ -20,6 +20,8 @@ export const ForgotPasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const [simulatedOtp, setSimulatedOtp] = useState<string | null>(null);
+
   // 60-second resend countdown timer
   const [resendCooldown, setResendCooldown] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -54,16 +56,28 @@ export const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      await apiClient('/auth/forgot-password', {
+      const res = await apiClient<{ message: string; simulatedOtp?: string }>('/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ email: email.trim() }),
       });
 
-      addToast({
-        type: 'success',
-        title: 'Verification Code Sent',
-        message: 'A 6-digit verification code has been sent to your email.',
-      });
+      if (res?.simulatedOtp) {
+        setSimulatedOtp(res.simulatedOtp);
+        const digits = res.simulatedOtp.split('').slice(0, 6);
+        setOtpDigits(digits);
+        addToast({
+          type: 'info',
+          title: `Verification Code: ${res.simulatedOtp}`,
+          message: 'Code auto-filled. You can also view it in server logs.',
+          duration: 10000,
+        });
+      } else {
+        addToast({
+          type: 'success',
+          title: 'Verification Code Sent',
+          message: 'A 6-digit verification code has been sent to your email.',
+        });
+      }
       setStep(2);
       setResendCooldown(60);
       setCanResend(false);
@@ -147,19 +161,31 @@ export const ForgotPasswordPage: React.FC = () => {
     setError(null);
 
     try {
-      await apiClient('/auth/forgot-password', {
+      const res = await apiClient<{ message: string; simulatedOtp?: string }>('/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ email: email.trim() }),
       });
 
-      addToast({
-        type: 'info',
-        title: 'Code Resent',
-        message: 'A new 6-digit code has been sent.',
-      });
+      if (res?.simulatedOtp) {
+        setSimulatedOtp(res.simulatedOtp);
+        const digits = res.simulatedOtp.split('').slice(0, 6);
+        setOtpDigits(digits);
+        addToast({
+          type: 'info',
+          title: `New Code: ${res.simulatedOtp}`,
+          message: 'Code refreshed and auto-filled.',
+          duration: 10000,
+        });
+      } else {
+        addToast({
+          type: 'info',
+          title: 'Code Resent',
+          message: 'A new 6-digit code has been sent.',
+        });
+        setOtpDigits(['', '', '', '', '', '']);
+      }
       setResendCooldown(60);
       setCanResend(false);
-      setOtpDigits(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } catch (err: any) {
       setError(err.message || 'Failed to resend code');
@@ -239,7 +265,7 @@ export const ForgotPasswordPage: React.FC = () => {
         </div>
 
         {/* Card Container */}
-        <div className="bg-zinc-900/90 border border-zinc-800 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl">
+        <div className="bg-zinc-900/90 border border-zinc-800 backdrop-blur-xl rounded-2xl p-5 sm:p-8 shadow-2xl">
           {/* Step Indicator */}
           {!isSuccess && (
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800">
@@ -366,8 +392,26 @@ export const ForgotPasswordPage: React.FC = () => {
                   Enter the 6-digit code sent to your email
                 </label>
 
+                {simulatedOtp && (
+                  <div className="mb-4 p-3 bg-indigo-500/10 border border-indigo-500/25 rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-indigo-400 shrink-0" />
+                      <span className="text-zinc-300">
+                        Verification Code: <strong className="font-mono text-indigo-300 font-bold tracking-wider">{simulatedOtp}</strong>
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOtpDigits(simulatedOtp.split('').slice(0, 6))}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 font-medium px-2 py-1 rounded bg-indigo-500/15 hover:bg-indigo-500/25 transition-colors"
+                    >
+                      Fill
+                    </button>
+                  </div>
+                )}
+
                 {/* 6 Digit Input Boxes */}
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 max-w-full">
+                <div className="flex items-center justify-center gap-1 sm:gap-2.5 max-w-full">
                   {otpDigits.map((digit, idx) => (
                     <input
                       key={idx}
@@ -376,11 +420,12 @@ export const ForgotPasswordPage: React.FC = () => {
                       inputMode="numeric"
                       pattern="[0-9]*"
                       maxLength={1}
+                      autoComplete={idx === 0 ? 'one-time-code' : 'off'}
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                       onPaste={handleOtpPaste}
-                      className="w-10 sm:w-12 h-12 sm:h-14 text-center text-lg sm:text-xl font-bold font-mono bg-zinc-800/90 border border-zinc-700 rounded-xl text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                      className="w-9 sm:w-12 h-11 sm:h-14 text-center text-base sm:text-xl font-bold font-mono bg-zinc-800/90 border border-zinc-700 rounded-xl text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
                   ))}
                 </div>

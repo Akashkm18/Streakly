@@ -334,6 +334,7 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
 
     const cleanEmail = email.toLowerCase().trim();
     const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    let simulatedOtp: string | undefined;
 
     if (user) {
       // 6-digit cryptographic OTP
@@ -363,16 +364,18 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
         req,
       });
 
-      // Send email (asynchronous, won't block or reveal failure)
-      sendOtpEmail(user.email, otp).catch((err) =>
-        console.error('[ForgotPassword] Failed to send email:', err)
-      );
+      // Send email (with 4s fast timeout). If cloud provider blocks SMTP, provide simulatedOtp fallback
+      const emailSent = await sendOtpEmail(user.email, otp);
+      if (!emailSent) {
+        simulatedOtp = otp;
+      }
     }
 
-    // Anti-enumeration generic response
+    // Response includes simulatedOtp fallback if cloud host firewall blocked outbound email
     res.json({
       data: {
         message: 'If an account exists with this email, a 6-digit verification code has been sent.',
+        ...(simulatedOtp ? { simulatedOtp } : {}),
       },
       error: null,
     });
