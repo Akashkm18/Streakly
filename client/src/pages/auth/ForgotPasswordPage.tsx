@@ -367,7 +367,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 </label>
 
                 {/* 6 Digit Input Boxes */}
-                <div className="flex items-center justify-between gap-2 sm:gap-2.5">
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 max-w-full">
                   {otpDigits.map((digit, idx) => (
                     <input
                       key={idx}
@@ -380,7 +380,7 @@ export const ForgotPasswordPage: React.FC = () => {
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                       onPaste={handleOtpPaste}
-                      className="w-12 h-14 text-center text-xl font-bold font-mono bg-zinc-800/90 border border-zinc-700 rounded-xl text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                      className="w-10 sm:w-12 h-12 sm:h-14 text-center text-lg sm:text-xl font-bold font-mono bg-zinc-800/90 border border-zinc-700 rounded-xl text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
                   ))}
                 </div>

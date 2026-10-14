@@ -30,17 +30,29 @@ const queryClient = new QueryClient({
 
 const AppContent: React.FC = () => {
   const { checkAuth } = useAuthStore();
-  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('streakly-theme') : null;
+    if (saved === 'light') return 'light';
+    return 'dark'; // Dark theme by default everywhere
+  });
 
   useEffect(() => {
     checkAuth();
-  }, []);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
-    document.documentElement.classList.toggle('light', nextTheme === 'light');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('streakly-theme', nextTheme);
+    }
   };
 
   return (
