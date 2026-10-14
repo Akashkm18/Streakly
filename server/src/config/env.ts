@@ -38,10 +38,14 @@ const envDataToParse = {
 const parsedEnv = envSchema.safeParse(envDataToParse);
 
 if (!parsedEnv.success) {
-  console.error('❌ FATAL: Invalid environment variables:');
-  console.error(parsedEnv.error.format());
+  const missingOrInvalid = parsedEnv.error.issues.map(
+    (issue) => `${issue.path.join('.')}: ${issue.message}`
+  );
+  console.error('❌ FATAL: Invalid or missing environment configuration:');
+  missingOrInvalid.forEach((msg) => console.error(`  - ${msg}`));
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('Application crashed due to invalid environment variables in production');
+    const varNames = parsedEnv.error.issues.map((i) => i.path.join('.')).join(', ');
+    throw new Error(`Production startup aborted: missing or invalid environment variables: ${varNames}`);
   }
 }
 

@@ -128,8 +128,19 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken?
 }
 
 export function clearAuthCookies(res: Response) {
-  res.clearCookie('accessToken', { path: '/' });
-  res.clearCookie('refreshToken', { path: '/' });
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie('accessToken', {
+    path: '/',
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'strict',
+  });
+  res.clearCookie('refreshToken', {
+    path: '/',
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'strict',
+  });
 }
 
 export function authenticate(req: Request, _res: Response, next: NextFunction): void {

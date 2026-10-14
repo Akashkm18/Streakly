@@ -1,16 +1,22 @@
+databases:
+  - name: streakly-db
+    databaseName: streakly
+    user: streakly_user
+    plan: free
+
 services:
-  # Streakly Backend Web Service (Node / Express / Prisma)
   - type: web
-    name: streakly-api
+    name: streakly
     env: node
     plan: free
-    rootDir: server
-    buildCommand: npm install --include=dev && npx prisma generate && npm run build
-    startCommand: node scripts/start.js
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 20
       - key: DATABASE_URL
         fromDatabase:
           name: streakly-db
@@ -19,39 +25,21 @@ services:
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
       - key: CLIENT_URL
         sync: false
       - key: SMTP_HOST
-        value: smtp.gmail.com
+        sync: false
       - key: SMTP_PORT
-        value: "587"
+        value: 587
+      - key: SMTP_SECURE
+        value: false
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS
         sync: false
-      - key: SMTP_SECURE
-        value: "false"
       - key: MAIL_FROM
         sync: false
-
-  # Streakly Frontend Static Site (React / Vite)
-  - type: web
-    name: streakly-client
-    env: static
-    rootDir: client
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        value: https://streakly-api-9cjr.onrender.com
-
-databases:
-  # Managed PostgreSQL Database
-  - name: streakly-db
-    plan: free
-    databaseName: streakly
-    user: streakly_user

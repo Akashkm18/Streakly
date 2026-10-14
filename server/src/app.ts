@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import fs from 'fs';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './common/middleware/errorHandler';
 import { apiLimiter } from './common/middleware/rateLimiter';
@@ -23,6 +24,9 @@ import exportRoutes from './modules/export/exportRoutes';
 
 export const app = express();
 
+// Trust reverse proxy (Render, AWS ALB, Cloudflare) for accurate HTTPS detection and client IP
+app.set('trust proxy', 1);
+
 // Security headers with strict CSP
 app.use(helmetMiddleware);
 
@@ -33,7 +37,7 @@ app.use(
       if (!origin || isOriginAllowed(origin)) {
         return callback(null, true);
       }
-      return callback(null, true); // Allow during transition/cross-service
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
   })
@@ -50,13 +54,25 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
 app.use('/uploads', express.static(uploadsDir));
 
+// Serve frontend static assets if built
+const clientDistCandidates = [
+  path.resolve(__dirname, '../../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), '../client/dist'),
+];
+const clientDist = clientDistCandidates.find((dir) => fs.existsSync(dir));
+
+if (clientDist) {
+  app.use(express.static(clientDist));
+}
+
 // Rate limit API routes
 app.use('/api', apiLimiter);
 
 // Swagger Documentation
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Health check
+// Health check - instant 200 OK without database connection dependency
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
@@ -77,6 +93,17 @@ app.use('/api/v1/badges', badgeRoutes);
 app.use('/api/v1/insights', insightRoutes);
 app.use('/api/v1/reminders', reminderRoutes);
 app.use('/api/v1/export', exportRoutes);
+
+// SPA catch-all fallback: Serve index.html for non-API client routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  if (clientDist && fs.existsSync(path.join(clientDist, 'index.html'))) {
+    return res.sendFile(path.join(clientDist, 'index.html'));
+  }
+  next();
+});
 
 // Central error handler
 app.use(errorHandler);

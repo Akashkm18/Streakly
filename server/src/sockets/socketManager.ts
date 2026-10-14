@@ -1,16 +1,18 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
+import { isOriginAllowed } from '../common/middleware/security';
 
 let io: SocketServer | null = null;
 
 export function initializeSockets(server: HttpServer): SocketServer {
   io = new SocketServer(server, {
     cors: {
-      origin: [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:5173',
-      ],
+      origin: (origin, callback) => {
+        if (!origin || isOriginAllowed(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error(`WebSocket CORS blocked for origin: ${origin}`));
+      },
       credentials: true,
     },
   });
